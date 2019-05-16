@@ -1,33 +1,24 @@
-ifeq ($(PLATFORM), gcw0)
-  CC         := /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
-  STRIP      := /opt/gcw0-toolchain/usr/bin/mipsel-linux-strip
-  SYSROOT    := $(shell $(CC) -print-sysroot)
-  CFLAGS     := --std=c89 --pedantic -Wall $(shell $(SYSROOT)/usr/bin/sdl-config --cflags) -DHOME_DIR -DNETWORKING
-  LDFLAGS    := $(shell $(SYSROOT)/usr/bin/sdl-config --libs) -lm
-endif
-ifeq ($(PLATFORM), macos)
-  CFLAGS     := $(shell sdl-config --cflags)
-endif
-ifeq ($(PLATFORM), mingw)
-  CC         := i686-w64-mingw32-gcc
-  STRIP      := i686-w64-mingw32-strip
-  SYSROOT    ?= /usr/i686-w64-mingw32
-  CFLAGS     := --std=c89 --pedantic -Wall $(shell $(SYSROOT)/bin/sdl-config --cflags)
-  LDFLAGS    := $(shell $(SYSROOT)/bin/sdl-config --libs) -lm
-  TARGET     := shifty.exe
-endif
+CHAINPREFIX := /opt/mipsel-linux-uclibc
+CROSS_COMPILE := $(CHAINPREFIX)/usr/bin/mipsel-linux-
+
+CC = $(CROSS_COMPILE)gcc
+STRIP = $(CROSS_COMPILE)strip
+CXX = $(CROSS_COMPILE)g++
+
+SYSROOT     := $(shell $(CC) --print-sysroot)
+SDL_CFLAGS  := $(shell $(SYSROOT)/usr/bin/sdl-config --cflags)
+SDL_LIBS    := $(shell $(SYSROOT)/usr/bin/sdl-config --libs)
+
+CFLAGS     := --std=c89 --pedantic -Wall $(SDL_CFLAGS) -DHOME_DIR -DNETWORKING
+LDFLAGS    := $(SDL_LIBS) -lm
 
 SRCDIRS      = . backend
 
-CC           ?= gcc
-STRIP        ?= strip
 TARGET       ?= shifty.elf
-SYSROOT      ?= $(shell $(CC) -print-sysroot)
 MACHINE      ?= $(shell $(CC) -dumpmachine)
-DESTDIR      ?= $(SYSROOT)
-CFLAGS       ?= --std=c89 --pedantic -Wall $(shell sdl-config --cflags) -DHOME_DIR -DNETWORKING
-LDFLAGS      ?= $(shell sdl-config --libs) -lm
-OUTDIR       ?= output/$(MACHINE)
+# DESTDIR      ?= $(SYSROOT)
+OUTDIR       ?= shifty
+# output/$(MACHINE)
 
 ifdef DEBUG
 #  CFLAGS += -DDEBUG -ggdb3 -Wall
@@ -38,7 +29,8 @@ else
   CFLAGS += -O2
 endif
 
-BINDIR       := $(OUTDIR)/bin
+# BINDIR       := $(OUTDIR)/bin
+BINDIR       := $(OUTDIR)
 SRCDIR       := src
 OBJDIR       := $(OUTDIR)/obj
 #IGNORED_FILES:= $(SRCDIR)/
@@ -61,6 +53,17 @@ $(OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 $(BINDIR) $(OBJDIR):
 	mkdir -p $@
+
+ipk: $(TARGET)
+	@rm -rf /tmp/.shifty-ipk/ && mkdir -p /tmp/.shifty-ipk/root/home/retrofw/games/shifty /tmp/.shifty-ipk/root/home/retrofw/apps/gmenu2x/sections/games
+	@cp -r shifty/shifty.elf shifty/shifty.png shifty/data /tmp/.shifty-ipk/root/home/retrofw/games/shifty
+	@cp shifty/shifty.lnk /tmp/.shifty-ipk/root/home/retrofw/apps/gmenu2x/sections/games
+	@sed "s/^Version:.*/Version: $$(date +%Y%m%d)/" shifty/control > /tmp/.shifty-ipk/control
+	@cp shifty/conffiles /tmp/.shifty-ipk/
+	@tar --owner=0 --group=0 -czvf /tmp/.shifty-ipk/control.tar.gz -C /tmp/.shifty-ipk/ control conffiles
+	@tar --owner=0 --group=0 -czvf /tmp/.shifty-ipk/data.tar.gz -C /tmp/.shifty-ipk/root/ .
+	@echo 2.0 > /tmp/.shifty-ipk/debian-binary
+	@ar r shifty/shifty.ipk /tmp/.shifty-ipk/control.tar.gz /tmp/.shifty-ipk/data.tar.gz /tmp/.shifty-ipk/debian-binary
 
 clean:
 	rm -Rf $(OUTDIR)
