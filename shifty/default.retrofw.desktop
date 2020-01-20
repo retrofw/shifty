@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Shifty Pills
+Comment=Shifty Pills port
+Exec=shifty.dge
+Icon=shifty
+Categories=games;
+Terminal=false
+Type=Application
+StartupNotify=true
