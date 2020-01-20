@@ -1,0 +1,4 @@
+title=Shifty-Pills
+description=Shifty-Pills port
+exec=/home/retrofw/games/shifty/shifty.dge
+clock=600

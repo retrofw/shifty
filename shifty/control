@@ -1,0 +1,10 @@
+Package: shifty
+Version: 
+Description: RetroGame port of Shifty-Pills
+Section: emus
+Priority: optional
+Maintainer: pingflood
+Architecture: mipsel
+Homepage: https://github.com/retrofw/shifty
+Depends:
+Source: https://github.com/retrofw/shifty
